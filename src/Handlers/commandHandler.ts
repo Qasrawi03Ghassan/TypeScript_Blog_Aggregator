@@ -1,4 +1,4 @@
-import { setUser } from "../Configs/dbConfig";
+import { setUser } from "../lib/db/Configs/dbConfig";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => void;
 export type CommandsRegistery = Record<string,CommandHandler>;

@@ -9,6 +9,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["./src/**/*.ts"],
+  "include": ["./src/**/*.ts", "src/lib/db/Configs/drizzle.config.ts"],
   "exclude": ["node_modules"]
 }
