@@ -1,5 +1,7 @@
 import { setUser } from "../lib/db/Configs/dbConfig";
-import { createUser, getUser } from "../lib/db/queries/users";
+import { createUser, getUser,deleteAllUsers, getAllUsers } from "../lib/db/queries/users";
+import {readConfig} from '../lib/db/Configs/dbConfig';
+import { Config } from "../lib/db/Configs/dbConfig";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -42,5 +44,21 @@ export async function registerHandler(cmdName: string,...args:string[]): Promise
     setUser(args[0]);
     console.log(`Successfully registered new user ${enteredUser} and logged in.\n${enteredUser} data:\n`);
     console.log(registeredUser);
+}
+
+export async function resetHandler(cmdName: string, ...args:string[]):Promise<void>{
+    await deleteAllUsers();
+    console.log('Sucessfully deleted all users!');
+}
+
+export async function listUsers(cmdName: string, ...args:string[]): Promise<void>{
+    let users = await getAllUsers();
+    if(!users)console.log('There are no registered users!');
+
+    let currConfig:Config = readConfig();
+
+    for(let user of Object.values(users)){
+        console.log(`* ${user.name} ${currConfig.currentUserName === user.name? '(current)':''}`);
+    }
 }
 
