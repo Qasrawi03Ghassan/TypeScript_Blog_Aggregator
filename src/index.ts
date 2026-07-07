@@ -1,7 +1,7 @@
-import {CommandsRegistery,registerCommand,runCommand,loginHandler} from './Handlers/commandHandler';
+import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler} from './Handlers/commandHandler';
 import process from 'node:process';
 
-function main() {
+async function main() {
   let registery: CommandsRegistery = {};
   registerAllCommands(registery);
 
@@ -15,7 +15,7 @@ function main() {
   let args = argsv.slice(1);
 
   try {
-    runCommand(registery,cmdName,...args);
+    await runCommand(registery,cmdName,...args);
   } catch (err) {
     console.log(`${err}`);
     process.exit(1);
@@ -24,6 +24,8 @@ function main() {
 
 function registerAllCommands(cmdReg: CommandsRegistery): void{
   registerCommand(cmdReg,'login',loginHandler);
+  registerCommand(cmdReg,'register',registerHandler);
 }
 
-main();
+await main();
+process.exit(0);
