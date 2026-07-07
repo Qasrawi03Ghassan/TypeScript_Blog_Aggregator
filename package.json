@@ -1,0 +1,27 @@
+{
+  "name": "build_blog_aggregator",
+  "version": "1.0.0",
+  "description": "This project features an RSS feed aggregator CLI application built using TypeScript and Postgresql.",
+  "main": "index.js",
+  "type":"module",
+  "scripts": {
+    "start": "tsx ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qasrawi03Ghassan/TypeScript_Blog_Aggregator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Qasrawi03Ghassan/TypeScript_Blog_Aggregator/issues"
+  },
+  "homepage": "https://github.com/Qasrawi03Ghassan/TypeScript_Blog_Aggregator#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "gitignore": "^0.7.0",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}
