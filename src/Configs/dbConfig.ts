@@ -1,7 +1,6 @@
-import os, { homedir } from 'os';
-import fs, { read } from 'fs';
+import os from 'os';
+import fs from 'fs';
 import path from 'path';
-import { config } from 'process';
 
 export type Config = {
     dbUrl: string,

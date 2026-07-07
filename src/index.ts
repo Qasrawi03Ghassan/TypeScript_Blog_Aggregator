@@ -1,11 +1,29 @@
-import {Config, setUser, readConfig} from './config';
+import {CommandsRegistery,registerCommand,runCommand,loginHandler} from './Handlers/commandHandler';
+import process from 'node:process';
 
 function main() {
-  const currentUser: string = 'Ghassan';
-  setUser(currentUser);
+  let registery: CommandsRegistery = {};
+  registerAllCommands(registery);
 
-  let currConfig = readConfig();
-  console.log(currConfig);
+  let argsv = process.argv.slice(2);
+  if(argsv.length === 0){
+    console.log('ERROR: Invalid command syntax, not enough arguments!');
+    process.exit(1);
+  }
+
+  let cmdName = argsv[0];
+  let args = argsv.slice(1);
+
+  try {
+    runCommand(registery,cmdName,...args);
+  } catch (err) {
+    console.log(`${err}`);
+    process.exit(1);
+  }
+}
+
+function registerAllCommands(cmdReg: CommandsRegistery): void{
+  registerCommand(cmdReg,'login',loginHandler);
 }
 
 main();
