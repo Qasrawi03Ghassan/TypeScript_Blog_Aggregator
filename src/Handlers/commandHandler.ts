@@ -73,13 +73,12 @@ export async function listFeeds(cmdName: string, ...args:string[]): Promise<void
 
 
 
-    console.log('Feeds details:\n');
+    console.log('Feeds details:');
     for(let feed of feeds){
-        console.log(`Feed number ${feeds.indexOf(feed)+1}`);
-        console.log(`   - name: ${feed.name}`);
-        console.log(`   - url: ${feed.url}`);
-        console.log(`   - creator_user: ${(await getUserById(feed.user_id)).name}`);
-        console.log('\n');
+        console.log(` * Feed number ${feeds.indexOf(feed)+1}:`);
+        console.log(`       - name: ${feed.name}`);
+        console.log(`       - url: ${feed.url}`);
+        console.log(`       - creator_user: ${(await getUserById(feed.user_id)).name}\n`);
     }
 }
 
