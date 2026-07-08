@@ -21,3 +21,5 @@ export async function deleteAllUsers(){
   const result = await db.delete(users);
   return result;
 }
+
+export type User = typeof users.$inferSelect;

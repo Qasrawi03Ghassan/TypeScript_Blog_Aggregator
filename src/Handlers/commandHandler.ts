@@ -1,7 +1,7 @@
 import { setUser } from "../lib/db/Configs/dbConfig";
-import { createUser, getUser,deleteAllUsers, getAllUsers } from "../lib/db/queries/users";
+import { createUser, getUser,deleteAllUsers, getAllUsers, User } from "../lib/db/queries/users";
+import { createFeed, Feed } from "../lib/db/queries/feeds";
 import {readConfig} from '../lib/db/Configs/dbConfig';
-import { Config } from "../lib/db/Configs/dbConfig";
 import { fetchFeed } from "../lib/rss";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
@@ -17,6 +17,11 @@ export async function runCommand(registery: CommandsRegistery, cmdName: string, 
     }else{
         throw new Error(`ERROR: ${cmdName} is not registered in the commands registery!`);
     }
+}
+
+export function getLoggedUser(): string{
+    let currConfig = readConfig();
+    return currConfig.currentUserName;
 }
 
 
@@ -56,10 +61,9 @@ export async function listUsers(cmdName: string, ...args:string[]): Promise<void
     let users = await getAllUsers();
     if(!users)console.log('There are no registered users!');
 
-    let currConfig:Config = readConfig();
-
+    const currUser = getLoggedUser();
     for(let user of Object.values(users)){
-        console.log(`* ${user.name} ${currConfig.currentUserName === user.name? '(current)':''}`);
+        console.log(`* ${user.name} ${currUser === user.name? '(current)':''}`);
     }
 }
 
@@ -71,3 +75,33 @@ export async function aggHandler(cmdName: string, ...args:string[]){
     console.log(JSON.stringify(feedObject,null,2));
 }
 
+export async function addFeedHandler(cmdName: string, ...args:string[]){
+    if(args === undefined || args.length === 0)throw new Error('Invalid use of addfeed command.\n Syntax: addfeed <feed_name> <feed_url>');
+    
+    const feedName = args[0];
+    const feedUrl = args[1];
+
+    let loggedUser = await getUser(getLoggedUser());
+    if(!loggedUser)throw new Error('Could not get logged in user!');
+    const loggedUserId = loggedUser.id;
+
+    let newFeed = await createFeed(feedName,feedUrl,loggedUserId);
+    console.log(`Successfully subscribed current user (${loggedUser.name}) to feed ${feedName}:\n`);
+    console.log(newFeed);
+}
+
+export function printFeed(feed:Feed, user:User){
+    console.log(`User data:`);
+    console.log(`   - id: ${user.id}`);
+    console.log(`   - name: ${user.name}`);
+    console.log(`   - created_at: ${user.createdAt}`);
+    console.log(`   - updated_at: ${user.updatedAt}`);
+
+    console.log(`Feed data:`);
+    console.log(`   - id: ${feed.id}`);
+    console.log(`   - name: ${feed.name}`);
+    console.log(`   - created_at: ${feed.createdAt}`);
+    console.log(`   - updated_at: ${feed.updatedAt}`);
+    console.log(`   - url: ${feed.url}`);
+    console.log(`   - user_id: ${feed.user_id}`);
+}

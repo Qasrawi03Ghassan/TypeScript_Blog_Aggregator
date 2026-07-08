@@ -1,4 +1,4 @@
-import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler, resetHandler, listUsers, aggHandler} from './Handlers/commandHandler';
+import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler, resetHandler, listUsers, aggHandler, addFeedHandler} from './Handlers/commandHandler';
 import process from 'node:process';
 
 async function main() {
@@ -28,6 +28,7 @@ function registerAllCommands(cmdReg: CommandsRegistery): void{
   registerCommand(cmdReg,'reset',resetHandler);
   registerCommand(cmdReg,'users',listUsers);
   registerCommand(cmdReg,'agg',aggHandler);
+  registerCommand(cmdReg,'addfeed',addFeedHandler);
 }
 
 await main();
