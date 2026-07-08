@@ -1,6 +1,6 @@
 import { setUser } from "../lib/db/Configs/dbConfig";
-import { createUser, getUser,deleteAllUsers, getAllUsers, User } from "../lib/db/queries/users";
-import { createFeed, Feed } from "../lib/db/queries/feeds";
+import { createUser, getUser,deleteAllUsers, getAllUsers, User, getUserById } from "../lib/db/queries/users";
+import { createFeed, Feed, getAllFeeds } from "../lib/db/queries/feeds";
 import {readConfig} from '../lib/db/Configs/dbConfig';
 import { fetchFeed } from "../lib/rss";
 
@@ -66,6 +66,23 @@ export async function listUsers(cmdName: string, ...args:string[]): Promise<void
         console.log(`* ${user.name} ${currUser === user.name? '(current)':''}`);
     }
 }
+
+export async function listFeeds(cmdName: string, ...args:string[]): Promise<void>{
+    let feeds = await getAllFeeds();
+    if(!feeds)console.log('There are no feeds!');
+
+
+
+    console.log('Feeds details:\n');
+    for(let feed of feeds){
+        console.log(`Feed number ${feeds.indexOf(feed)+1}`);
+        console.log(`   - name: ${feed.name}`);
+        console.log(`   - url: ${feed.url}`);
+        console.log(`   - creator_user: ${(await getUserById(feed.user_id)).name}`);
+        console.log('\n');
+    }
+}
+
 
 export async function aggHandler(cmdName: string, ...args:string[]){
     //if(args === undefined || args.length === 0)throw new Error('Invalid use of agg command.\n Syntax: agg <username>');

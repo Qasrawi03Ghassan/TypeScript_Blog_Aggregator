@@ -6,4 +6,10 @@ export async function createFeed(name: string,url: string, user_id: string){
     return result;
 }
 
+export async function getAllFeeds() {
+  const result = await db.select().from(feeds);
+  return result;
+}
+
+
 export type Feed = typeof feeds.$inferSelect;
