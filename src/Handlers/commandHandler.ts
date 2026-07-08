@@ -2,6 +2,7 @@ import { setUser } from "../lib/db/Configs/dbConfig";
 import { createUser, getUser,deleteAllUsers, getAllUsers } from "../lib/db/queries/users";
 import {readConfig} from '../lib/db/Configs/dbConfig';
 import { Config } from "../lib/db/Configs/dbConfig";
+import { fetchFeed } from "../lib/rss";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -60,5 +61,13 @@ export async function listUsers(cmdName: string, ...args:string[]): Promise<void
     for(let user of Object.values(users)){
         console.log(`* ${user.name} ${currConfig.currentUserName === user.name? '(current)':''}`);
     }
+}
+
+export async function aggHandler(cmdName: string, ...args:string[]){
+    //if(args === undefined || args.length === 0)throw new Error('Invalid use of agg command.\n Syntax: agg <username>');
+    const feed = 'https://www.wagslane.dev/index.xml';
+    let feedObject = await fetchFeed(feed);
+
+    console.log(JSON.stringify(feedObject,null,2));
 }
 

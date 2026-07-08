@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx ./src/index.ts",
-    "db-generate":"npx drizzle-kit generate --config=src/lib/db/Configs/drizzle.config.ts",
-    "db-migrate":"npx drizzle-kit migrate --config=src/lib/db/Configs/drizzle.config.ts"
+    "db-generate": "npx drizzle-kit generate --config=src/lib/db/Configs/drizzle.config.ts",
+    "db-migrate": "npx drizzle-kit migrate --config=src/lib/db/Configs/drizzle.config.ts"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,10 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
+    "fast-xml-parser": "^5.9.3",
     "postgres": "^3.4.9"
+  },
+  "allowScripts": {
+    "esbuild": false
   }
 }
