@@ -3,7 +3,7 @@ import { createUser, getUser,deleteAllUsers, getAllUsers, User, getUserById } fr
 import { createFeed, Feed, getAllFeeds, getFeed } from "../lib/db/queries/feeds";
 import { fetchFeed } from "../lib/rss";
 import { createFeedFollow, getFeedFollowsForUser } from "../lib/db/queries/feedFollows";
-import { getLoggedUser } from "../lib/middlewares/loggedUser";
+import { deleteFeedFollow } from "../lib/db/queries/feedFollows";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -75,8 +75,6 @@ export async function listFeeds(cmdName: string, ...args:string[]): Promise<void
     let feeds = await getAllFeeds();
     if(!feeds)console.log('There are no feeds!');
 
-
-
     console.log('Feeds details:');
     for(let feed of feeds){
         console.log(` * Feed number ${feeds.indexOf(feed)+1}:`);
@@ -144,4 +142,18 @@ export async function followingHandler(cmdName: string, user:User,...args:string
     for(let feedFollow of userFeedFollows){
         console.log(`   - ${feedFollow.feed_name}`);
     }
+}
+
+export async function unfollowHandler(cmdName: string,user:User, ...args: string[]){
+    if(args === undefined || args.length === 0)throw new Error('Invalid use of follow command.\n Syntax: unfollow <feed_url>');
+
+    const feedUrl = args[0];
+
+    let feedToUnfollow = await getFeed(feedUrl);
+    if(!feedToUnfollow)throw new Error(`ERROR: Feed with URL ${feedUrl} does not exist!`);
+
+    let UnfollowedFeed = await deleteFeedFollow(user.id,feedToUnfollow.id);
+    if(!UnfollowedFeed) throw new Error('ERROR: Cannot unfollow feed!');    
+
+    console.log(`Successfully unfollowed feed with URL ${feedUrl}`);
 }
