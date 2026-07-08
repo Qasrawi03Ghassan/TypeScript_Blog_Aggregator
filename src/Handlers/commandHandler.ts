@@ -1,12 +1,20 @@
-import { setUser } from "../lib/db/Configs/dbConfig";
+import { readConfig, setUser } from "../lib/db/Configs/dbConfig";
 import { createUser, getUser,deleteAllUsers, getAllUsers, User, getUserById } from "../lib/db/queries/users";
 import { createFeed, Feed, getAllFeeds, getFeed } from "../lib/db/queries/feeds";
-import {readConfig} from '../lib/db/Configs/dbConfig';
 import { fetchFeed } from "../lib/rss";
 import { createFeedFollow, getFeedFollowsForUser } from "../lib/db/queries/feedFollows";
+import { getLoggedUser } from "../lib/middlewares/loggedUser";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
+
+export type UserCommandsHandler = (
+    cmdName: string,
+    user: User,
+    ...args: string[]
+) => Promise<void>;
+
+export type middlewareLoggedin = (handler: UserCommandsHandler) => CommandHandler;
 
 export function registerCommand(registery: CommandsRegistery, cmdName: string, handler: CommandHandler){
     registery[cmdName] = handler;
@@ -19,12 +27,6 @@ export async function runCommand(registery: CommandsRegistery, cmdName: string, 
         throw new Error(`ERROR: ${cmdName} is not registered in the commands registery!`);
     }
 }
-
-export function getLoggedUser(): string{
-    let currConfig = readConfig();
-    return currConfig.currentUserName;
-}
-
 
 
 export async function loginHandler(cmdName: string,...args:string[]): Promise<void>{
@@ -62,9 +64,10 @@ export async function listUsers(cmdName: string, ...args:string[]): Promise<void
     let users = await getAllUsers();
     if(!users)console.log('There are no registered users!');
 
-    const currUser = getLoggedUser();
+    let loggedUserName = readConfig().currentUserName;
+
     for(let user of Object.values(users)){
-        console.log(`* ${user.name} ${currUser === user.name? '(current)':''}`);
+        console.log(`* ${user.name} ${loggedUserName === user.name? '(current)':''}`);
     }
 }
 
@@ -91,20 +94,17 @@ export async function aggHandler(cmdName: string, ...args:string[]){
     console.log(JSON.stringify(feedObject,null,2));
 }
 
-export async function addFeedHandler(cmdName: string, ...args:string[]){
+export async function addFeedHandler(cmdName: string, user:User,...args:string[]){
     if(args === undefined || args.length === 0)throw new Error('Invalid use of addfeed command.\n Syntax: addfeed <feed_name> <feed_url>');
     
     const feedName = args[0];
     const feedUrl = args[1];
 
-    let loggedUser = await getUser(getLoggedUser());
-    if(!loggedUser)throw new Error('Could not get logged in user!');
+    let newFeed = await createFeed(feedName,feedUrl,user.id);
 
-    let newFeed = await createFeed(feedName,feedUrl,loggedUser.id);
+    await createFeedFollow(newFeed.id,user.id);
 
-    await createFeedFollow(newFeed.id,loggedUser.id);
-    
-    console.log(`Successfully created new feed named ${feedName} under current user (${loggedUser.name}):\n`);
+    console.log(`Successfully created new feed named ${feedName} under current user (${user.name}):\n`);
     console.log(newFeed);
 }
 
@@ -124,25 +124,23 @@ export function printFeed(feed:Feed, user:User){
     console.log(`   - user_id: ${feed.user_id}`);
 }
 
-export async function followHandler(cmdName: string, ...args:string[]){
+export async function followHandler(cmdName: string, user:User,...args:string[]){
     if(args === undefined || args.length === 0)throw new Error('Invalid use of follow command.\n Syntax: follow <feed_url>');
 
     const feedUrl = args[0];
-    
-    let loggedUser = await getUser(getLoggedUser());
+
     let feed = await getFeed(feedUrl);
     if(!feed) throw new Error('Feed does not exist!');
 
-    let feedFollow = await createFeedFollow(feed.id,loggedUser.id);
+    let feedFollow = await createFeedFollow(feed.id,user.id);
 
     console.log(`Successfully followed ${feedFollow.feed_name} by ${feedFollow.user_name}: \n${JSON.stringify(feedFollow,null,2)}`);
 }
 
-export async function followingHandler(cmdName: string, ...args:string[]){
-    let loggedUser = await getUser(getLoggedUser());
-    let userFeedFollows = await getFeedFollowsForUser(loggedUser.id);
+export async function followingHandler(cmdName: string, user:User,...args:string[]){
+    let userFeedFollows = await getFeedFollowsForUser(user.id);
 
-    console.log(`Feeds followed by ${loggedUser.name}:`);
+    console.log(`Feeds followed by ${user.name}:`);
     for(let feedFollow of userFeedFollows){
         console.log(`   - ${feedFollow.feed_name}`);
     }

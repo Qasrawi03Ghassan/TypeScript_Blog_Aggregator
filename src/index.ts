@@ -1,4 +1,5 @@
 import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler, resetHandler, listUsers, aggHandler, addFeedHandler, listFeeds, followHandler,followingHandler} from './Handlers/commandHandler';
+import { getLoggedUser } from './lib/middlewares/loggedUser';
 import process from 'node:process';
 
 async function main() {
@@ -29,9 +30,9 @@ function registerAllCommands(cmdReg: CommandsRegistery): void{
   registerCommand(cmdReg,'users',listUsers);
   registerCommand(cmdReg,'feeds',listFeeds);
   registerCommand(cmdReg,'agg',aggHandler);
-  registerCommand(cmdReg,'addfeed',addFeedHandler);
-  registerCommand(cmdReg,'follow',followHandler);
-  registerCommand(cmdReg,'following',followingHandler);
+  registerCommand(cmdReg,'addfeed',getLoggedUser(addFeedHandler));
+  registerCommand(cmdReg,'follow',getLoggedUser(followHandler));
+  registerCommand(cmdReg,'following',getLoggedUser(followingHandler));
 }
 
 await main();
