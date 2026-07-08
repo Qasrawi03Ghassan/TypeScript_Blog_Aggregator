@@ -1,8 +1,9 @@
 import { setUser } from "../lib/db/Configs/dbConfig";
 import { createUser, getUser,deleteAllUsers, getAllUsers, User, getUserById } from "../lib/db/queries/users";
-import { createFeed, Feed, getAllFeeds } from "../lib/db/queries/feeds";
+import { createFeed, Feed, getAllFeeds, getFeed } from "../lib/db/queries/feeds";
 import {readConfig} from '../lib/db/Configs/dbConfig';
 import { fetchFeed } from "../lib/rss";
+import { createFeedFollow, getFeedFollowsForUser } from "../lib/db/queries/feedFollows";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -84,7 +85,6 @@ export async function listFeeds(cmdName: string, ...args:string[]): Promise<void
 
 
 export async function aggHandler(cmdName: string, ...args:string[]){
-    //if(args === undefined || args.length === 0)throw new Error('Invalid use of agg command.\n Syntax: agg <username>');
     const feed = 'https://www.wagslane.dev/index.xml';
     let feedObject = await fetchFeed(feed);
 
@@ -99,10 +99,12 @@ export async function addFeedHandler(cmdName: string, ...args:string[]){
 
     let loggedUser = await getUser(getLoggedUser());
     if(!loggedUser)throw new Error('Could not get logged in user!');
-    const loggedUserId = loggedUser.id;
 
-    let newFeed = await createFeed(feedName,feedUrl,loggedUserId);
-    console.log(`Successfully subscribed current user (${loggedUser.name}) to feed ${feedName}:\n`);
+    let newFeed = await createFeed(feedName,feedUrl,loggedUser.id);
+
+    await createFeedFollow(newFeed.id,loggedUser.id);
+    
+    console.log(`Successfully created new feed named ${feedName} under current user (${loggedUser.name}):\n`);
     console.log(newFeed);
 }
 
@@ -120,4 +122,28 @@ export function printFeed(feed:Feed, user:User){
     console.log(`   - updated_at: ${feed.updatedAt}`);
     console.log(`   - url: ${feed.url}`);
     console.log(`   - user_id: ${feed.user_id}`);
+}
+
+export async function followHandler(cmdName: string, ...args:string[]){
+    if(args === undefined || args.length === 0)throw new Error('Invalid use of follow command.\n Syntax: follow <feed_url>');
+
+    const feedUrl = args[0];
+    
+    let loggedUser = await getUser(getLoggedUser());
+    let feed = await getFeed(feedUrl);
+    if(!feed) throw new Error('Feed does not exist!');
+
+    let feedFollow = await createFeedFollow(feed.id,loggedUser.id);
+
+    console.log(`Successfully followed ${feedFollow.feed_name} by ${feedFollow.user_name}: \n${JSON.stringify(feedFollow,null,2)}`);
+}
+
+export async function followingHandler(cmdName: string, ...args:string[]){
+    let loggedUser = await getUser(getLoggedUser());
+    let userFeedFollows = await getFeedFollowsForUser(loggedUser.id);
+
+    console.log(`Feeds followed by ${loggedUser.name}:`);
+    for(let feedFollow of userFeedFollows){
+        console.log(`   - ${feedFollow.feed_name}`);
+    }
 }
