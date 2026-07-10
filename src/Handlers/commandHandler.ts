@@ -1,9 +1,10 @@
 import { readConfig, setUser } from "../lib/db/Configs/dbConfig";
 import { createUser, getUser,deleteAllUsers, getAllUsers, User, getUserById } from "../lib/db/queries/users";
-import { createFeed, Feed, getAllFeeds, getFeed } from "../lib/db/queries/feeds";
+import { createFeed, Feed, getAllFeeds, getFeed, getNextFeedToFetch, markFeedFetched } from "../lib/db/queries/feeds";
 import { fetchFeed } from "../lib/rss";
 import { createFeedFollow, getFeedFollowsForUser } from "../lib/db/queries/feedFollows";
 import { deleteFeedFollow } from "../lib/db/queries/feedFollows";
+import { duration } from "drizzle-orm/gel-core";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -86,10 +87,78 @@ export async function listFeeds(cmdName: string, ...args:string[]): Promise<void
 
 
 export async function aggHandler(cmdName: string, ...args:string[]){
-    const feed = 'https://www.wagslane.dev/index.xml';
-    let feedObject = await fetchFeed(feed);
+    if(args === undefined || args.length === 0)throw new Error('Invalid use of agg command.\n Syntax: agg <time_between_reqs>');
+    
+    const timeBetweenReqs = parseDuration(args[0]);
 
-    console.log(JSON.stringify(feedObject,null,2));
+    console.log(`Starting feed aggregator with time between requests: ${args[0]}`);
+
+    scrapeFeeds().catch((err) => {
+        console.log(`Error while scraping feeds: ${err}`);
+    });
+
+    const interval = setInterval(async () => {
+        scrapeFeeds().catch((err) => {
+        console.log(`Error while scraping feeds: ${err}`);
+    });
+    },timeBetweenReqs);
+
+    await new Promise<void>((resolve) => {
+        process.on("SIGINT", () => {
+            console.log("Shutting down feed aggregator...");
+            clearInterval(interval);
+            resolve();
+        });
+    });
+}
+
+async function scrapeFeeds(){
+    let nextFeed = await getNextFeedToFetch();
+    if(!nextFeed) throw new Error('Cannot find next feed!');
+
+    let markedFeed = await markFeedFetched(nextFeed.id);
+    if(!markedFeed) throw new Error('Cannot mark feed as fetched!');
+
+    let rssContent = await fetchFeed(nextFeed.url);
+    if(!rssContent) throw new Error('Cannot get feed data!');
+
+    if(!rssContent.channel.item)console.log(`No items are found in this fetchd feed: ${nextFeed.name}`);
+
+    console.log(`Fetched feed ${nextFeed.name} items:\n`)
+    for(let item of rssContent.channel.item){
+        console.log(`   * ${item.title}`);
+    }
+
+}
+
+function parseDuration(durationStr: string): number{
+    const regex = /^(\d+)(ms|s|m|h)$/;
+    const match = durationStr.match(regex);
+
+    if(!match)throw new Error('Invalid duration format. Use a number followed by ms, s, m, or h (e.g., 500ms, 2s, 5m, 1h).');
+
+    const duration = parseInt(match[1]);
+    const type = match[2];
+
+    let finalDur = 0;
+
+    switch(type){
+        case 'ms':
+            finalDur = duration;
+            break;
+        case 's':
+            finalDur = duration * 1000;        
+            break;
+        case 'm':
+            finalDur = duration * 1000 * 60;    
+            break;
+        case 'h':
+            finalDur = duration * 1000 * 60 * 60;        
+            break;
+        default:
+    }
+
+    return finalDur;
 }
 
 export async function addFeedHandler(cmdName: string, user:User,...args:string[]){
