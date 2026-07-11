@@ -1,4 +1,4 @@
-import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler, resetHandler, listUsers, aggHandler, addFeedHandler, listFeeds, followHandler,followingHandler, unfollowHandler} from './Handlers/commandHandler';
+import {CommandsRegistery,registerCommand,runCommand,loginHandler, registerHandler, resetHandler, listUsers, aggHandler, addFeedHandler, listFeeds, followHandler,followingHandler, unfollowHandler, browseHandler} from './Handlers/commandHandler';
 import { getLoggedUser } from './lib/middlewares/loggedUser';
 import process from 'node:process';
 
@@ -18,7 +18,7 @@ async function main() {
   try {
     await runCommand(registery,cmdName,...args);
   } catch (err) {
-    console.log(`${err}`);
+    console.log(err);
     process.exit(1);
   }
 }
@@ -34,6 +34,7 @@ function registerAllCommands(cmdReg: CommandsRegistery): void{
   registerCommand(cmdReg,'follow',getLoggedUser(followHandler));
   registerCommand(cmdReg,'following',getLoggedUser(followingHandler));
   registerCommand(cmdReg,'unfollow',getLoggedUser(unfollowHandler));
+  registerCommand(cmdReg,'browse',getLoggedUser(browseHandler));
 }
 
 await main();

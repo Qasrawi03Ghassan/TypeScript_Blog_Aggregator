@@ -5,6 +5,7 @@ import { fetchFeed } from "../lib/rss";
 import { createFeedFollow, getFeedFollowsForUser } from "../lib/db/queries/feedFollows";
 import { deleteFeedFollow } from "../lib/db/queries/feedFollows";
 import { duration } from "drizzle-orm/gel-core";
+import { createPost, getPostsForUser } from "../lib/db/queries/posts";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistery = Record<string,CommandHandler>;
@@ -58,7 +59,7 @@ export async function registerHandler(cmdName: string,...args:string[]): Promise
 
 export async function resetHandler(cmdName: string, ...args:string[]):Promise<void>{
     await deleteAllUsers();
-    console.log('Sucessfully deleted all users!');
+    console.log('Sucessfully reseted dataabse!');
 }
 
 export async function listUsers(cmdName: string, ...args:string[]): Promise<void>{
@@ -126,7 +127,15 @@ async function scrapeFeeds(){
 
     console.log(`Fetched feed ${nextFeed.name} items:\n`)
     for(let item of rssContent.channel.item){
-        console.log(`   * ${item.title}`);
+        //console.log(`   * ${item.title}`); 
+
+        let postPubDate = new Date(item.pubDate);
+        if(Number.isNaN(postPubDate.getTime()))throw new Error(`ERROR: Invalid published_at date fromat for post ${item.title}!`);
+
+        let savePost = await createPost(item.title,item.link,item.description,postPubDate,nextFeed.id);
+        if(!savePost) throw new Error(`ERROR: Cannot save post ${item.title} in database!`);
+
+        console.log(`Successfully saved post with title: ${item.title} and link: ${item.link}`);
     }
 
 }
@@ -225,4 +234,35 @@ export async function unfollowHandler(cmdName: string,user:User, ...args: string
     if(!UnfollowedFeed) throw new Error('ERROR: Cannot unfollow feed!');    
 
     console.log(`Successfully unfollowed feed with URL ${feedUrl}`);
+}
+
+export async function browseHandler(cmdName: string, user:User,...args:string[]){
+    let limit = 0;
+    if(args === undefined || args.length === 0)limit = 2;
+    else limit = Number(args[0]);
+    if(Number.isNaN(limit))throw new Error('ERROR: Invalid limit amount entered!');
+
+    let userFeedFollows = await getFeedFollowsForUser(user.id);
+    if(!userFeedFollows)throw new Error(`User ${user.name} does not follow any feed!`);
+
+    let userFeedIds = [];
+    for(let feedFollow of userFeedFollows){
+        userFeedIds.push(feedFollow.feed_id);
+    }
+
+    let latestPosts = await getPostsForUser(userFeedIds,limit);
+    if(!latestPosts || latestPosts.length === 0) throw new Error(`No posts found for user ${user.name}!`);
+
+    console.log(`Posts details for user ${user.name}:\n`);
+    for(let userPost of latestPosts){
+        console.log(`   - title: ${userPost.title}`);
+        console.log(`   - link: ${userPost.url}`);
+        console.log(`   - description: ${userPost.description}`);
+        console.log(`   - created_at: ${userPost.createdAt}`);
+        console.log(`   - published_at: ${userPost.published_at}`);
+
+        console.log('\n\n');
+    }
+
+
 }
